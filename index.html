@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>エゴグラム面談サポート</title>
+<style>
+:root{
+  --bg:#EEF1F4; --surface:#FFFFFF; --surface2:#F6F8FA; --ink:#1E2833; --muted:#5D6B7A; --line:#D5DCE3; --grid:#E3E8ED;
+  --accent:#24476B; --accent-ink:#FFFFFF; --danger:#B3363B;
+  --fp:#3557A0; --mp:#BD4F74; --a:#23806F; --fc:#C9811C; --ac:#7353AA;
+  --yes:#24476B; --mid:#6E8197; --no:#9AA7B4;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11171D; --surface:#1A222B; --surface2:#212B35; --ink:#E6ECF2; --muted:#9AA8B6; --line:#33404D; --grid:#2A3540;
+    --accent:#7FA6D6; --accent-ink:#0F1820; --danger:#E7767A;
+    --fp:#7E9DE0; --mp:#E58BAA; --a:#5CC4AE; --fc:#E9B05A; --ac:#AE93E0;
+    --yes:#7FA6D6; --mid:#7D90A6; --no:#56636F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11171D; --surface:#1A222B; --surface2:#212B35; --ink:#E6ECF2; --muted:#9AA8B6; --line:#33404D; --grid:#2A3540;
+  --accent:#7FA6D6; --accent-ink:#0F1820; --danger:#E7767A;
+  --fp:#7E9DE0; --mp:#E58BAA; --a:#5CC4AE; --fc:#E9B05A; --ac:#AE93E0;
+  --yes:#7FA6D6; --mid:#7D90A6; --no:#56636F;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;font-size:16px;line-height:1.7;-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px 48px}
+h1{font-size:1.45rem;margin:8px 0 4px;letter-spacing:.02em}
+h2{font-size:1.1rem;margin:28px 0 10px}
+h3{font-size:1rem;margin:0 0 6px}
+p{margin:0 0 10px}
+.muted{color:var(--muted);font-size:.9rem}
+.view{display:none}
+.view.on{display:block}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:10px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:500}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.wide{width:100%}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:8px 10px;min-height:40px}
+.btn.danger{color:var(--danger)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>.btn{flex:1}
+
+/* home */
+.brand{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+.mini-graph{flex:none}
+.list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.list li{border-bottom:1px solid var(--line)}
+.list button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:14px 4px}
+.list .nm{font-weight:700;font-size:1.05rem}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.chip{font-size:.8rem;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chip b{font-weight:700}
+.empty{padding:28px 4px;color:var(--muted)}
+.note{background:var(--surface2);border-radius:12px;padding:12px 14px;font-size:.88rem;color:var(--muted);margin-top:24px}
+
+/* form */
+label.f{display:block;font-weight:500;margin:16px 0 6px}
+input[type=text],input[type=date],input[type=number],textarea{width:100%;font:inherit;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+textarea{min-height:140px;resize:vertical}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface);color:var(--ink);padding:12px 8px;min-height:48px}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.manual-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.manual-grid label{font-size:.85rem;text-align:center;font-weight:700}
+.manual-grid input{text-align:center;padding:10px 4px;margin-top:4px}
+.err{color:var(--danger);font-size:.9rem;margin-top:8px;min-height:1.2em}
+
+/* quiz */
+.qtop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bar{height:6px;background:var(--grid);border-radius:999px;overflow:hidden;margin:10px 0 0}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.qno{font-size:.95rem;color:var(--muted);margin-top:36px}
+.qtext{font-size:1.5rem;font-weight:700;line-height:1.55;min-height:6.5em;margin:8px 0 24px}
+.answers{display:grid;gap:12px}
+.ans{min-height:64px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.15rem;font-weight:700}
+.ans[aria-pressed=true]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+
+/* result */
+.rhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+table.score{border-collapse:collapse;width:100%;min-width:520px;font-size:.85rem;background:var(--surface)}
+table.score th,table.score td{border:1px solid var(--line);padding:5px 4px;text-align:center}
+table.score thead th{font-weight:700}
+table.score td.tot{font-weight:700;font-size:1rem}
+table.score th.rowh{background:var(--surface2);white-space:nowrap}
+.graphbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 6px 4px;margin-top:14px}
+.graphbox svg{width:100%;height:auto;display:block}
+.summary{background:var(--surface);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:14px 16px;margin-top:6px}
+.summary ul{margin:6px 0 0;padding-left:1.2em}
+.summary li{margin-bottom:6px}
+.cat{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-top:12px;overflow:hidden}
+.cat summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 14px;cursor:pointer}
+.cat summary::-webkit-details-marker{display:none}
+.cat .sw{width:10px;align-self:stretch;border-radius:4px;flex:none}
+.cat .ttl{flex:1;font-weight:700}
+.cat .pt{font-weight:700;font-size:1.2rem}
+.lv{font-size:.78rem;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor}
+.cat .body{padding:0 14px 14px}
+.tr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 10px}
+.tr div{background:var(--surface2);border-radius:10px;padding:8px 10px;font-size:.88rem}
+.tr .on{outline:2px solid var(--accent)}
+.k{font-size:.8rem;font-weight:700;color:var(--muted);margin:10px 0 2px}
+.body ul{margin:2px 0 6px;padding-left:1.2em;font-size:.92rem}
+.foot-actions{margin-top:24px}
+.saved{font-size:.85rem;color:var(--muted);min-height:1.2em;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HOME -->
+<section id="v-home" class="view on">
+  <div class="brand">
+    <div>
+      <h1>エゴグラム面談サポート</h1>
+      <p class="muted">50問に答えると傾向図ができ、面談での関わり方まで確認できます。</p>
+    </div>
+  </div>
+  <button class="btn primary wide" id="btnNew">新しく診断する</button>
+  <h2>記録一覧</h2>
+  <ul class="list" id="list"></ul>
+  <h2>バックアップ</h2>
+  <p class="muted">全員分の記録を1つのファイルにまとめて端末に保存します。機種変更のときや、記録が消えてしまったときに復元できます。</p>
+  <div class="row"><button class="btn dl-only" id="btnBackup" hidden>バックアップを保存</button><button class="btn" id="btnRestore">バックアップから復元</button></div>
+  <input type="file" id="fileIn" accept=".json,application/json" hidden>
+  <div class="saved" id="bkMsg"></div>
+  <div class="note">記録はこの端末のブラウザ内だけに保存され、外部には送信されません。ブラウザのデータを消すと記録も消えるため、ときどきバックアップを保存してください。エゴグラムは本人の自己回答による「傾向」です。人事評価の材料にはせず、相手を理解して対話のきっかけにするために使ってください。</div>
+</section>
+
+<!-- SETUP -->
+<section id="v-setup" class="view">
+  <button class="btn ghost" data-go="home">‹ 一覧へ戻る</button>
+  <h1>対象者の情報</h1>
+  <label class="f" for="inName">氏名</label>
+  <input type="text" id="inName" placeholder="例：山田 太郎" autocomplete="off">
+  <label class="f" for="inDate">実施日</label>
+  <input type="date" id="inDate">
+  <label class="f">入力方法</label>
+  <div class="seg" role="group">
+    <button type="button" id="mQuiz" aria-pressed="true">スマホで回答する</button>
+    <button type="button" id="mManual" aria-pressed="false">紙の点数を入力</button>
+  </div>
+  <div id="manualBox" hidden>
+    <p class="muted" style="margin-top:12px">紙で集計済みの合計点（0〜20）を入力します。</p>
+    <div class="manual-grid">
+      <label>FP<input type="number" inputmode="numeric" min="0" max="20" data-m="0"></label>
+      <label>MP<input type="number" inputmode="numeric" min="0" max="20" data-m="1"></label>
+      <label>A<input type="number" inputmode="numeric" min="0" max="20" data-m="2"></label>
+      <label>FC<input type="number" inputmode="numeric" min="0" max="20" data-m="3"></label>
+      <label>AC<input type="number" inputmode="numeric" min="0" max="20" data-m="4"></label>
+    </div>
+  </div>
+  <label class="f">記録</label>
+  <div class="seg" role="group">
+    <button type="button" id="kOff" aria-pressed="true">残さない</button>
+    <button type="button" id="kOn" aria-pressed="false">この端末に残す</button>
+  </div>
+  <p class="muted" style="margin-top:6px">「残さない」にすると、結果画面を閉じた時点で回答と結果が消えます。</p>
+  <div class="err" id="setupErr"></div>
+  <button class="btn primary wide" id="btnStart" style="margin-top:8px">回答をはじめる</button>
+</section>
+
+<!-- QUIZ -->
+<section id="v-quiz" class="view">
+  <div class="qtop">
+    <button class="btn ghost" id="qBack">‹ 前の質問</button>
+    <button class="btn ghost" id="qPause">中断する</button>
+  </div>
+  <div class="bar"><i id="qBar"></i></div>
+  <div class="qno" id="qNo"></div>
+  <div class="qtext" id="qText"></div>
+  <div class="answers">
+    <button class="ans" data-v="2">はい</button>
+    <button class="ans" data-v="1">普通</button>
+    <button class="ans" data-v="0">いいえ</button>
+  </div>
+</section>
+
+<!-- RESULT -->
+<section id="v-result" class="view">
+  <button class="btn ghost" data-go="home">‹ 一覧へ戻る</button>
+  <div class="rhead">
+    <div>
+      <h1 id="rName"></h1>
+      <div class="muted" id="rDate"></div>
+    </div>
+  </div>
+
+  <h2>エゴグラム傾向図</h2>
+  <div class="tblwrap"><table class="score" id="rTable"></table></div>
+  <div class="graphbox" id="rGraph"></div>
+
+  <h2>傾向のまとめ</h2>
+  <div class="summary" id="rSummary"></div>
+
+  <h2>個性傾向と面談での関わり方</h2>
+  <p class="muted">各項目をタップすると詳細が開きます。枠で囲んだ側が、この人に出やすい面です。</p>
+  <div id="rCats"></div>
+
+  <h2>面談メモ</h2>
+  <textarea id="rMemo" placeholder="面談で話したこと、次回までの約束など"></textarea>
+  <div class="saved" id="memoSaved"></div>
+
+  <button class="btn primary wide dl-only" id="btnImg" hidden style="margin-top:24px">結果を画像で保存</button>
+  <div class="saved" id="imgMsg"></div>
+  <div class="foot-actions row">
+    <button class="btn" id="btnRedo">回答を見直す</button>
+    <button class="btn danger" id="btnDel">この記録を削除</button>
+  </div>
+</section>
+
+</div>
+<script>
+const KEY='egogram_records_v1';
+const Q=[
+'時間を守らないことは嫌ですか','不正を見過ごすことなく対処を行いますか','規則・ルール、倫理、道徳を大切にしますか','自分にも他人にも厳しいですか','よく「…すべきである」「…ねばならない」と思いますか','決めたことは最後までやり遂げようと考えますか','権利を主張する前に義務を果たすことが大切であると思いますか','約束を守ることを重視していますか','無責任な人を見ると許せないですか','間違ったことに対して、間違いであると言いますか',
+'思いやりが強い方ですか','人をほめることが多いですか','人の話を聞いて、共感する方ですか','自分から挨拶をする方ですか','他人の失敗には寛大ですか','困っている人をみると手を差し伸べることが多いですか','人の気持ちを考えて対応する方ですか','世話好きですか','子供や目下の人をかわいがりますか','社会や他者への貢献を大切なことと考えていますか',
+'情緒的というより理論的なタイプですか','効率的に物事を進めようとしますか','物事を多角的に分析して決めたり、行動する方ですか','感情的になることは少ないですか','他者のさまざまな意見も参考にして決めていく方ですか','将来のことを予測してから行動しますか','何事にも事実に基づいて判断しますか','客観的に物事を考えられる方ですか','仕事もプライベートも計画的に進めるタイプですか','物事を冷静に判断する方ですか',
+'やりたいことが多くありますか','気分転換がうまい方ですか','よく笑う方ですか','好奇心が強いですか','欲しいものは手にいれないと気がすまない方ですか','「すごい」「わぁー」「へぇー」などの感嘆詞をよく使いますか','直感で判断するタイプですか','趣味が多いですか','新しいことが好きですか','将来の夢や楽しいことを考えることが好きですか',
+'人の気持ちや考えが気になって、合わせてしまう方ですか','人前に出るより、後ろにいるタイプですか','新しいことには慎重なタイプですか','協調性が高い方ですか','相手の顔色や、言うことが気になりますか','よく後悔しますか','遠慮がちですか','人の話は最後までじっくり聞くことができますか','不愉快なことでも口に出さずに抑えてしまう方ですか','人の評価を気にする方ですか'
+];
+const CATS=[
+ {k:'FP',ja:'父性的な親',nick:'父性',c:'var(--fp)',
+  plus:['正義感','指導的','責任感','ルール順守姿勢','努力家','ぶれない'],
+  minus:['独善的','支配的','懲罰的','相違意見は批判的スタンス','完全主義傾向'],
+  words:['〇〇すべきだ','××しかない','押し付け調','威圧・批判調'],axis:'勝負・善悪',
+  high:{read:'責任感が強く、筋を通すことを大切にします。一方で自分の基準を部下にも求め、厳しさが強く出ることがあります。',
+    tips:['まず本人の責任感や頑張りを認めてから本題に入る','頭ごなしの指摘は反発を招きやすい。事実と基準を示して一緒に確認する','「部下にどう伝わっているか」を振り返る問いを入れる'],
+    ask:['最近、部下に厳しく言いすぎたと感じた場面はありますか？','「こうあるべき」で譲れない点と、任せてもいい点はどこですか？']},
+  low:{read:'柔軟でこだわりが少ない反面、基準や方針を示すことに遠慮が出やすい傾向です。',
+    tips:['目標・期限・役割を面談の中で具体的に言葉にしてもらう','「決めたことを守る」仕組みを一緒に作る'],
+    ask:['この件で、いつまでに何を決めますか？','チームに守ってほしいルールを一つ挙げるなら？']}},
+ {k:'MP',ja:'母性的な親',nick:'母性',c:'var(--mp)',
+  plus:['保護的','共感的','同情的','世話好き','ボランティア精神が豊か'],
+  minus:['過保護','曖昧','介入的（おせっかい）','自虐的','逃避傾向'],
+  words:['〇〇してあげよう','××なんだね','柔らかい','同情口調'],axis:'貢献',
+  high:{read:'面倒見がよく、周囲を支えることに価値を置きます。人の分まで引き受けて抱え込んだり、厳しい話を曖昧にしたりしやすい面もあります。',
+    tips:['周囲への貢献に具体的に感謝を伝える','仕事を抱え込んでいないか、業務量と任せ方を確認する','言いにくい指摘を後回しにしていないか一緒に整理する'],
+    ask:['本来は部下に任せられる仕事を、自分でやっていませんか？','最近、断りたかったのに引き受けたことはありますか？']},
+  low:{read:'ドライで割り切れる一方、部下への気遣いが伝わりにくいことがあります。',
+    tips:['部下の頑張りを言葉にして伝える場面を意識してもらう','「相手はどう感じたか」を考える問いを入れる'],
+    ask:['最近、部下をほめた場面を教えてください','今、気にかけてあげたいメンバーはいますか？']}},
+ {k:'A',ja:'大人',nick:'理性',c:'var(--a)',
+  plus:['理性的','合理的','現実的','分析的','頭の回転速い','効率重視'],
+  minus:['機械的','自己中心的','冷たい印象','感情を汲み取れない','打算的'],
+  words:['具体的に言うと','5W3H','単調','冷静'],axis:'損得・合理・非合理',
+  high:{read:'事実とデータで冷静に判断できます。正しさを優先して、相手の感情を置き去りにすることがあります。',
+    tips:['数字・事実・根拠を示して話すと納得が早い','結論から伝え、5W3Hで整理する','部下の気持ちをどう受け止めているかも確認する'],
+    ask:['データで見ると、今いちばんの課題は何ですか？','その判断に、部下はどう感じていそうですか？']},
+  low:{read:'感覚や勢いで動ける反面、状況の整理や見通しが後回しになりやすい傾向です。',
+    tips:['面談で事実と数字を一緒に書き出して整理する','次の行動を5W3Hで具体化して終える'],
+    ask:['事実として起きていることは何ですか？','このまま続けると3か月後どうなりそうですか？']}},
+ {k:'FC',ja:'自由な子',nick:'無邪気',c:'var(--fc)',
+  plus:['活動的','創造性','積極性','新しいことにチャレンジする','行動力'],
+  minus:['衝動的','無計画','攻撃的','わがまま','ルール・規則を守れない'],
+  words:['〇〇がしたい','擬音が多い','感嘆詞','明るい','感情的'],axis:'快不快',
+  high:{read:'明るく行動力があり、場を前向きにします。気分で動いたり、計画やルールが後回しになったりすることがあります。',
+    tips:['やりたいこと・アイデアを先に引き出すと乗ってくる','アイデアを計画と期限に落とし込む手伝いをする','感情的になった場面は、落ち着いてから振り返る'],
+    ask:['今いちばんやってみたいことは何ですか？','それを実現するための最初の一歩は？']},
+  low:{read:'落ち着いて慎重な反面、楽しさや意欲を感じにくくなっている可能性もあります。',
+    tips:['雑談や本人の関心事から入り、緊張をほぐす','疲れや負担が溜まっていないかも気にかける'],
+    ask:['仕事で楽しいと感じるのはどんな時ですか？','最近、気分転換できていますか？']}},
+ {k:'AC',ja:'順応の子',nick:'従順',c:'var(--ac)',
+  plus:['協調的','順応的','改善力','他者に対する配慮','傾聴姿勢'],
+  minus:['追随的','消極的','守備的','反抗心','過剰忖度','同情を誘う'],
+  words:['〇〇してもよいか','少し長い','言葉を選ぶ','遠慮がち'],axis:'他者評価',
+  high:{read:'協調性が高く周囲に合わせられます。本音を言わずに我慢を溜め込んだり、相手の顔色を優先しすぎたりすることがあります。',
+    tips:['評価や結論を急がず、安心して話せる雰囲気をつくる','「はい／いいえ」で終わらない開かれた質問をし、答えを待つ','我慢やストレスが溜まっていないか確認する'],
+    ask:['本当はこうしたい、と思っていることはありますか？','言いにくくて黙っていることはありますか？']},
+  low:{read:'自分の考えをはっきり持てる一方、周りに合わせることや他者の意見を取り入れることが苦手な場合があります。',
+    tips:['周囲からどう見えているかを具体的にフィードバックする','他者の意見を聞く場面を意識してもらう'],
+    ask:['最近、部下の意見を取り入れて変えたことはありますか？','周りから見て、あなたの進め方はどう映っていると思いますか？']}}
+];
+const HI=14, LO=8;
+
+let records=load(), cur=null, qi=0, mode='quiz';
+function load(){try{const v=localStorage.getItem(KEY);return v?JSON.parse(v):[]}catch(e){return []}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(records))}catch(e){}}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function show(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));window.scrollTo(0,0)}
+function clearResult(){['#rTable','#rGraph','#rSummary','#rCats'].forEach(s=>$(s).innerHTML='');$('#rMemo').value='';$('#rName').textContent='';$('#rDate').textContent=''}
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{if(cur&&cur.keep===false){cur=null;clearResult()}renderHome();show(b.dataset.go)});
+
+function calc(r){
+  if(r.manual) return CATS.map((_,i)=>({y:null,m:null,n:null,total:r.manual[i]}));
+  return CATS.map((_,i)=>{const s=r.answers.slice(i*10,i*10+10);
+    const y=s.filter(v=>v===2).length,m=s.filter(v=>v===1).length,n=s.filter(v=>v===0).length;
+    return {y,m,n,total:y*2+m}});
+}
+const answered=r=>r.manual?50:r.answers.filter(v=>v!==null).length;
+const level=t=>t>=HI?'高':t<=LO?'低':'中';
+
+function renderHome(){
+  const ul=$('#list');
+  if(!records.length){ul.innerHTML='<li class="empty">まだ記録がありません。「新しく診断する」から始めてください。</li>';return}
+  const sorted=[...records].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.created-a.created);
+  ul.innerHTML=sorted.map(r=>{
+    const done=answered(r)===50;const sc=calc(r);
+    const chips=done?CATS.map((c,i)=>`<span class="chip">${c.k} <b>${sc[i].total}</b></span>`).join(''):`<span class="chip">回答途中 ${answered(r)}/50</span>`;
+    return `<li><button data-id="${r.id}"><div class="nm">${esc(r.name)}</div><div class="muted">${esc(r.date||'')}</div><div class="chips">${chips}</div></button></li>`
+  }).join('');
+  ul.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>open(b.dataset.id));
+}
+function open(id){
+  cur=records.find(r=>r.id===id); if(!cur)return;
+  if(answered(cur)<50){qi=cur.answers.findIndex(v=>v===null);if(qi<0)qi=0;renderQ();show('quiz')}
+  else{renderResult();show('result')}
+}
+
+/* setup */
+function setMode(m){mode=m;$('#mQuiz').setAttribute('aria-pressed',m==='quiz');$('#mManual').setAttribute('aria-pressed',m==='manual');$('#manualBox').hidden=m!=='manual';$('#btnStart').textContent=m==='quiz'?'回答をはじめる':'結果を表示する'}
+$('#mQuiz').onclick=()=>setMode('quiz');$('#mManual').onclick=()=>setMode('manual');
+let keep=false;function setKeep(k){keep=k;$('#kOff').setAttribute('aria-pressed',!k);$('#kOn').setAttribute('aria-pressed',k)}
+$('#kOff').onclick=()=>setKeep(false);$('#kOn').onclick=()=>setKeep(true);
+$('#btnNew').onclick=()=>{$('#inName').value='';$('#inDate').value=new Date().toLocaleDateString('sv-SE');document.querySelectorAll('[data-m]').forEach(i=>i.value='');$('#setupErr').textContent='';setMode('quiz');setKeep(false);show('setup');setTimeout(()=>$('#inName').focus(),50)};
+$('#btnStart').onclick=()=>{
+  const name=$('#inName').value.trim();
+  if(!name){$('#setupErr').textContent='氏名を入力してください。';return}
+  const r={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,date:$('#inDate').value,memo:'',keep,created:Date.now(),answers:Array(50).fill(null),manual:null};
+  if(mode==='manual'){
+    const vals=[...document.querySelectorAll('[data-m]')].map(i=>i.value===''?NaN:Number(i.value));
+    if(vals.some(v=>!Number.isInteger(v)||v<0||v>20)){$('#setupErr').textContent='5項目すべてに0〜20の整数を入力してください。';return}
+    r.manual=vals; if(keep){records.push(r); save();} cur=r; renderResult(); show('result'); return;
+  }
+  if(keep){records.push(r); save();} cur=r; qi=0; renderQ(); show('quiz');
+};
+
+/* quiz */
+function renderQ(){
+  $('#qNo').textContent=`質問 ${qi+1} / 50`;
+  $('#qText').textContent=Q[qi];
+  $('#qBar').style.width=(answered(cur)/50*100)+'%';
+  document.querySelectorAll('.ans').forEach(b=>b.setAttribute('aria-pressed',cur.answers[qi]===Number(b.dataset.v)));
+  $('#qBack').style.visibility=qi===0?'hidden':'visible';
+}
+document.querySelectorAll('.ans').forEach(b=>b.onclick=()=>{
+  cur.answers[qi]=Number(b.dataset.v); save();
+  b.setAttribute('aria-pressed','true');
+  setTimeout(()=>{
+    if(qi<49){qi++;renderQ()}
+    else{const any=cur.answers.findIndex(v=>v===null);
+      if(any>=0){qi=any;renderQ()}else{renderResult();show('result')}}
+  },160);
+});
+$('#qBack').onclick=()=>{if(qi>0){qi--;renderQ()}};
+let pauseArm=false,pauseT;
+$('#qPause').onclick=()=>{const b=$('#qPause');
+  if(cur.keep===false&&!pauseArm){pauseArm=true;b.textContent='回答が消えます。もう一度押すと中断';pauseT=setTimeout(()=>{pauseArm=false;b.textContent='中断する'},5000);return}
+  pauseArm=false;clearTimeout(pauseT);b.textContent='中断する';save();if(cur.keep===false){cur=null;clearResult()}renderHome();show('home')};
+
+/* graph */
+function graph(t){
+  const W=360,H=330,L=30,R=8,T=14,B=30,pw=W-L-R,ph=H-T-B,cw=pw/5;
+  const y=v=>T+ph-(v/20)*ph, x=i=>L+cw*i+cw/2;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="エゴグラム傾向図">`;
+  for(let v=0;v<=20;v++){
+    s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="${v%5===0?'var(--line)':'var(--grid)'}" stroke-width="1"/>`;
+    s+=`<text x="${L-6}" y="${y(v)+3.5}" font-size="9.5" text-anchor="end" fill="var(--muted)">${v}</text>`;
+  }
+  for(let i=0;i<=5;i++) s+=`<line x1="${L+cw*i}" x2="${L+cw*i}" y1="${T}" y2="${T+ph}" stroke="var(--line)"/>`;
+  CATS.forEach((c,i)=>{
+    s+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${T+ph}" stroke="var(--line)" stroke-dasharray="3 3"/>`;
+    s+=`<text x="${x(i)}" y="${H-10}" font-size="13" font-weight="700" text-anchor="middle" fill="${c.c}">${c.k}</text>`;
+  });
+  s+=`<rect x="${L}" y="${y(HI)}" width="${pw}" height="${y(LO)-y(HI)}" fill="var(--surface2)" opacity=".0"/>`;
+  s+=`<polyline points="${t.map((v,i)=>x(i)+','+y(v)).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="2.2" stroke-linejoin="round"/>`;
+  t.forEach((v,i)=>{
+    s+=`<circle cx="${x(i)}" cy="${y(v)}" r="7" fill="var(--surface)" stroke="${CATS[i].c}" stroke-width="3"/>`;
+    s+=`<text x="${x(i)}" y="${y(v)-12}" font-size="12" font-weight="700" text-anchor="middle" fill="var(--ink)">${v}</text>`;
+  });
+  return s+'</svg>';
+}
+
+/* analysis */
+function analyze(t){
+  const max=Math.max(...t),min=Math.min(...t);
+  const top=CATS.filter((_,i)=>t[i]===max).map(c=>`${c.k}（${c.nick}）`).join('・');
+  const low=CATS.filter((_,i)=>t[i]===min).map(c=>`${c.k}（${c.nick}）`).join('・');
+  const H=i=>t[i]>=HI, Lw=i=>t[i]<=LO;
+  const notes=[];
+  if(max-min<=4) notes.push('5項目の差が小さいバランス型です。場面に応じて使い分けができている可能性があります。普段どの面がよく出るかを本人に聞いてみましょう。');
+  if(H(0)&&H(1)) notes.push('FPとMPがともに高く、厳しさと面倒見を併せ持つ「親分肌」タイプです。責任を一人で背負い込み、負荷が大きくなっていないか確認しましょう。');
+  if(H(1)&&H(4)) notes.push('MPとACがともに高く、頼まれると断れずに抱え込みやすい組み合わせです。業務量と本音の両方を聞きましょう。');
+  if(H(0)&&Lw(2)) notes.push('FPが高くAが低めで、感情が先に立った厳しい指摘になりやすい組み合わせです。事実ベースで振り返る習慣づくりが効果的です。');
+  if(H(2)&&Lw(1)) notes.push('Aが高くMPが低めで、正しいが冷たく受け取られやすい組み合わせです。部下からの見え方を一緒に考えましょう。');
+  if(H(3)&&Lw(4)) notes.push('FCが高くACが低めで、自分のペースで前に進む推進力があります。周囲を置いていかないよう、合意形成の場面を意識してもらいましょう。');
+  if(H(4)&&Lw(3)) notes.push('ACが高くFCが低めで、我慢を溜め込みやすい組み合わせです。安心して本音を話せる雰囲気づくりを優先し、ストレスのサインにも注意しましょう。');
+  if(Lw(2)&&t[2]===min) notes.push('Aが最も低く、状況を冷静に整理する力が働きにくくなっている可能性があります。面談では事実の整理を手伝う役に回ると効果的です。');
+  return {max,min,top,low,notes};
+}
+
+/* result */
+function renderResult(){
+  const sc=calc(cur), t=sc.map(s=>s.total);
+  $('#rName').textContent=cur.name+' さん';
+  $('#rDate').textContent=(cur.date?'実施日 '+cur.date:'')+(cur.manual?'（紙の点数から入力）':'')+(cur.keep===false?'　※この結果は保存されていません。閉じると消えます':'');
+  const d=v=>v===null?'—':v;
+  $('#rTable').innerHTML=`<thead><tr><th class="rowh" rowspan="2"></th>${CATS.map(c=>`<th colspan="3" style="color:${c.c}">${c.k}<br><span style="font-weight:400;color:var(--muted)">${c.ja}</span></th>`).join('')}</tr>
+  <tr>${CATS.map(()=>'<th>はい</th><th>普通</th><th>いいえ</th>').join('')}</tr></thead><tbody>
+  <tr><th class="rowh">点数</th>${CATS.map(()=>'<td>2点</td><td>1点</td><td>0点</td>').join('')}</tr>
+  <tr><th class="rowh">回答数</th>${sc.map(s=>`<td>${d(s.y)}</td><td>${d(s.m)}</td><td>${d(s.n)}</td>`).join('')}</tr>
+  <tr><th class="rowh">計</th>${sc.map(s=>`<td>${s.y===null?'—':s.y*2}</td><td>${d(s.m)}</td><td>—</td>`).join('')}</tr>
+  <tr><th class="rowh">合計</th>${sc.map(s=>`<td colspan="3" class="tot">${s.total} 点</td>`).join('')}</tr></tbody>`;
+  $('#rGraph').innerHTML=graph(t);
+
+  // summary
+  const {max,min,top,low,notes}=analyze(t);
+  $('#rSummary').innerHTML=`<p>最も高いのは <b>${top}：${max}点</b>、最も低いのは <b>${low}：${min}点</b> です。</p>${notes.length?'<ul>'+notes.map(n=>`<li>${n}</li>`).join('')+'</ul>':''}<p class="muted" style="margin:8px 0 0">目安：${HI}点以上を「高」、${LO}点以下を「低」としています。</p>`;
+
+  // per category
+  const order=CATS.map((c,i)=>i).sort((a,b)=>t[b]-t[a]);
+  $('#rCats').innerHTML=order.map(i=>{
+    const c=CATS[i],v=t[i],lv=level(v);
+    const g=lv==='低'?c.low:c.high;
+    const plusOn=lv!=='低', minusOn=lv==='高';
+    const lvColor=lv==='高'?c.c:lv==='低'?'var(--muted)':'var(--ink)';
+    const advice=lv==='中'
+      ?`<p>${c.k}は平均的な水準です。プラス面を活かせている場面と、マイナス面が出る場面を本人に聞いてみましょう。</p>`
+      :`<p>${g.read}</p><div class="k">面談での関わり方</div><ul>${g.tips.map(x=>`<li>${x}</li>`).join('')}</ul><div class="k">質問例</div><ul>${g.ask.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+    return `<details class="cat"${i===order[0]||i===order[4]?' open':''}>
+      <summary><span class="sw" style="background:${c.c}"></span><span class="ttl">${c.k}（${c.nick}）<span class="muted" style="font-weight:400"> ${c.ja}</span></span><span class="lv" style="color:${lvColor}">${lv}</span><span class="pt">${v}</span></summary>
+      <div class="body">
+        <div class="tr"><div class="${plusOn?'on':''}"><b>＋ プラス面</b><br>${c.plus.join('、')}</div><div class="${minusOn?'on':''}"><b>－ マイナス面</b><br>${c.minus.join('、')}</div></div>
+        <div class="k">言葉・声の調子</div><p style="font-size:.92rem">${c.words.join('、')}</p>
+        <div class="k">判断軸</div><p style="font-size:.92rem">${c.axis}</p>
+        ${advice}
+      </div></details>`;
+  }).join('');
+
+  $('#rMemo').value=cur.memo||''; $('#memoSaved').textContent='';
+}
+let memoT;
+$('#rMemo').oninput=e=>{cur.memo=e.target.value;clearTimeout(memoT);memoT=setTimeout(()=>{save();$('#memoSaved').textContent='メモを保存しました'},500)};
+$('#btnRedo').onclick=()=>{
+  if(cur.manual){$('#imgMsg').textContent='紙の点数から入力した記録は見直しできません。新しく診断してください。';return}
+  qi=0;renderQ();show('quiz')};
+let delArm=false,delT;
+function resetDel(){const b=$('#btnDel');delArm=false;clearTimeout(delT);b.textContent='この記録を削除';b.style.background='';b.style.color=''}
+$('#btnDel').onclick=()=>{const b=$('#btnDel');
+  if(!delArm){delArm=true;b.textContent='もう一度押すと削除します';b.style.background='var(--danger)';b.style.color='#fff';delT=setTimeout(resetDel,5000);return}
+  resetDel();records=records.filter(r=>r.id!==cur.id);save();cur=null;clearResult();renderHome();show('home')};
+
+/* ===== 端末への保存 ===== */
+let dl=null;
+if(window.claude&&typeof window.claude.use==='function'){
+  window.claude.use('downloads').then(d=>{dl=d}).catch(()=>{});
+}
+document.querySelectorAll('.dl-only').forEach(b=>b.hidden=false);
+async function saveFile(filename,data,type){
+  if(dl) return dl.save({filename,data});
+  const blob=data instanceof Blob?data:new Blob([data],{type});
+  try{
+    const file=new File([blob],filename,{type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return}
+  }catch(e){if(e&&e.name==='AbortError')throw {code:'declined'}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+function dlError(e,el){
+  const c=e&&e.code;
+  el.textContent=c==='declined'?'保存をキャンセルしました。':c==='rate_limited'?'少し待ってからもう一度お試しください。':'この画面では保存できませんでした。';
+}
+const today=()=>new Date().toLocaleDateString('sv-SE');
+const safeName=s=>String(s).replace(/[\\/:*?"<>|\s]+/g,'_');
+function wrapText(g,text,maxW){
+  const lines=[];let line='';
+  for(const ch of text){if(g.measureText(line+ch).width>maxW&&line){lines.push(line);line=ch}else line+=ch}
+  if(line)lines.push(line);return lines;
+}
+function drawResult(r){
+  const sc=calc(r),t=sc.map(x=>x.total),an=analyze(t);
+  const W=1080,cv=document.createElement('canvas');cv.width=W;cv.height=4000;
+  const g=cv.getContext('2d');
+  const F='"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif';
+  const ink='#1E2833',mut='#5D6B7A',ln='#AEB8C2',gr='#E1E6EB';
+  const COL=['#3557A0','#BD4F74','#23806F','#C9811C','#7353AA'];
+  g.fillStyle='#FFFFFF';g.fillRect(0,0,W,cv.height);
+  g.textBaseline='middle';
+  const txt=(s,x,y,font,color,align)=>{g.font=font;g.fillStyle=color;g.textAlign=align||'left';g.fillText(s,x,y)};
+  let y=70;
+  txt(r.name+' さん',40,y,`700 46px ${F}`,ink);
+  y+=50;txt('エゴグラム傾向図'+(r.date?'　実施日 '+r.date:''),40,y,`400 26px ${F}`,mut);
+  y+=40;const X0=40,lw=120,cw=(W-80-lw)/5,sw=cw/3;
+  g.strokeStyle=ln;g.lineWidth=2;
+  const cell=(x,yy,w,h,s,font,color)=>{g.strokeStyle=ln;g.lineWidth=2;g.strokeRect(x,yy,w,h);if(s!==null&&s!==undefined&&s!=='')txt(String(s),x+w/2,yy+h/2,font,color||ink,'center')};
+  const fN=`400 24px ${F}`,fB=`700 26px ${F}`;
+  cell(X0,y,lw,110,'',fN);
+  CATS.forEach((c,i)=>{const x=X0+lw+cw*i;cell(x,y,cw,60,c.k+' '+c.ja,`700 21px ${F}`,COL[i]);
+    ['はい','普通','いいえ'].forEach((h,j)=>cell(x+sw*j,y+60,sw,50,h,`400 21px ${F}`,mut))});
+  y+=110;
+  const rows=[['点数',i=>['2点','1点','0点']],['回答数',i=>[sc[i].y,sc[i].m,sc[i].n]],['計',i=>[sc[i].y===null?null:sc[i].y*2,sc[i].m,'—']]];
+  rows.forEach(([lab,f])=>{cell(X0,y,lw,52,lab,fN,ink);
+    CATS.forEach((c,i)=>f(i).forEach((v,j)=>cell(X0+lw+cw*i+sw*j,y,sw,52,v===null?'—':v,fN,ink)));y+=52});
+  cell(X0,y,lw,56,'合計',fB,ink);
+  CATS.forEach((c,i)=>cell(X0+lw+cw*i,y,cw,56,t[i]+' 点',fB,ink));
+  y+=56;
+  y+=50;const GL=90,GR=W-50,GT=y+20,GH=640,gw=GR-GL,gcw=gw/5;
+  const py=v=>GT+GH-(v/20)*GH,px=i=>GL+gcw*i+gcw/2;
+  for(let v=0;v<=20;v++){g.strokeStyle=v%5===0?ln:gr;g.lineWidth=v%5===0?2:1.5;g.beginPath();g.moveTo(GL,py(v));g.lineTo(GR,py(v));g.stroke();
+    txt(String(v),GL-14,py(v),`400 20px ${F}`,mut,'right')}
+  g.strokeStyle=ln;g.lineWidth=2;for(let i=0;i<=5;i++){g.beginPath();g.moveTo(GL+gcw*i,GT);g.lineTo(GL+gcw*i,GT+GH);g.stroke()}
+  g.setLineDash([8,8]);CATS.forEach((c,i)=>{g.beginPath();g.moveTo(px(i),GT);g.lineTo(px(i),GT+GH);g.stroke()});g.setLineDash([]);
+  g.strokeStyle=ink;g.lineWidth=4;g.lineJoin='round';g.beginPath();t.forEach((v,i)=>i?g.lineTo(px(i),py(v)):g.moveTo(px(i),py(v)));g.stroke();
+  t.forEach((v,i)=>{g.beginPath();g.arc(px(i),py(v),13,0,Math.PI*2);g.fillStyle='#fff';g.fill();g.lineWidth=6;g.strokeStyle=COL[i];g.stroke();
+    txt(String(v),px(i),py(v)-34,`700 26px ${F}`,ink,'center')});
+  CATS.forEach((c,i)=>txt(c.k,px(i),GT+GH+36,`700 30px ${F}`,COL[i],'center'));
+  y=GT+GH+90;
+  txt('傾向のまとめ',40,y,`700 32px ${F}`,ink);y+=50;
+  const para=(s,font,color)=>{g.font=font;wrapText(g,s,W-100).forEach(l=>{txt(l,40,y,font,color);y+=42})};
+  para(`最も高いのは ${an.top}：${an.max}点、最も低いのは ${an.low}：${an.min}点`,`700 27px ${F}`,ink);
+  an.notes.forEach(n=>{y+=6;para('・'+n,`400 26px ${F}`,ink)});
+  y+=10;
+  CATS.forEach((c,i)=>{const lv=level(t[i]);para(`${c.k}（${c.nick}）${t[i]}点・${lv}　${lv==='低'?'':'＋'+c.plus.join('、')}${lv==='高'?'／－'+c.minus.join('、'):''}`,`400 23px ${F}`,lv==='高'?COL[i]:mut)});
+  if(r.memo&&r.memo.trim()){
+    y+=30;txt('面談メモ',40,y,`700 32px ${F}`,ink);y+=50;
+    r.memo.split('\n').forEach(l=>para(l||' ',`400 26px ${F}`,ink));
+  }
+  y+=40;
+  const out=document.createElement('canvas');out.width=W;out.height=Math.min(y,cv.height);
+  out.getContext('2d').drawImage(cv,0,0);
+  return new Promise(res=>out.toBlob(res,'image/png'));
+}
+$('#btnImg').onclick=async()=>{
+  const msg=$('#imgMsg');
+  msg.textContent='画像を作成しています…';
+  try{
+    const blob=await drawResult(cur);
+    await saveFile(`エゴグラム_${safeName(cur.name)}_${cur.date||today()}.png`,blob,'image/png');
+    msg.textContent='画像を保存しました。';
+  }catch(e){dlError(e,msg)}
+};
+$('#btnBackup').onclick=async()=>{
+  const msg=$('#bkMsg');
+  if(!records.length){msg.textContent='保存する記録がありません。';return}
+  try{
+    await saveFile(`エゴグラム_バックアップ_${today()}.json`,JSON.stringify({app:'egogram',version:1,savedAt:new Date().toISOString(),records},null,1),'application/json');
+    msg.textContent=`${records.length}人分の記録を保存しました。`;
+  }catch(e){dlError(e,msg)}
+};
+$('#btnRestore').onclick=()=>$('#fileIn').click();
+$('#fileIn').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  const msg=$('#bkMsg');
+  try{
+    const j=JSON.parse(await f.text());
+    const list=Array.isArray(j)?j:j.records;
+    const ok=(list||[]).filter(r=>r&&typeof r.id==='string'&&typeof r.name==='string'&&((Array.isArray(r.answers)&&r.answers.length===50)||(Array.isArray(r.manual)&&r.manual.length===5)));
+    if(!ok.length){msg.textContent='このファイルには復元できる記録がありません。バックアップで保存したファイルを選んでください。';return}
+    let added=0,updated=0;
+    ok.forEach(r=>{if(!Array.isArray(r.answers))r.answers=Array(50).fill(null);
+      const i=records.findIndex(x=>x.id===r.id);if(i>=0){records[i]=r;updated++}else{records.push(r);added++}});
+    save();renderHome();
+    msg.textContent=`復元しました（追加 ${added}人、上書き ${updated}人）。`;
+  }catch(err){msg.textContent='ファイルを読み込めませんでした。バックアップで保存したファイルを選んでください。'}
+};
+
+renderHome();
+</script>
+</body>
+</html>
